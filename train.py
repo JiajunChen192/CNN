@@ -12,8 +12,9 @@ from modification_tensor_embedding import *
 from convolution_layers import *
 from decoder_network import *
 from deconvolution_layers import *
-from metadata_encoding import metadata_to_embedding
+from metadata_encoding import generate_one_hot_mappings, metadata_to_embedding
 
+speaker_id_to_embedding, file_id_to_embedding, system_id_to_embedding, label_to_embedding = generate_one_hot_mappings(train_metadatas)
 
 def encode_metadata(metadata_list):
     """
@@ -22,6 +23,8 @@ def encode_metadata(metadata_list):
     Args:
     - metadata_list: List of metadata tuples. Each tuple contains (SPEAKER_ID, AUDIO_FILE_NAME, SYSTEM_ID, KEY)
 
+    Returns:
+    - Tensor of shape (len(metadata_list), 128) (assuming 128 is large enough to hold the encodings)
     """
 
     # Extract unique speaker IDs for one-hot encoding
@@ -33,21 +36,7 @@ def encode_metadata(metadata_list):
     encoded_metadata = []
 
     for entry in metadata_list:
-        speaker_id, _, system_id, key = entry
-
-        # One-hot encode speaker ID
-        speaker_encoding = [1 if speaker_id == unique_id else 0 for unique_id in unique_speaker_ids]
-
-        # One-hot encode system ID
-        system_encoding = [1 if system_id == possible_id else 0 for possible_id in possible_system_ids]
-
-        # Encode the KEY
-        key_encoding = [0] if key == 'bonafide' else [1]
-
-        # Concatenate the encodings
-        combined_encoding = speaker_encoding + system_encoding + key_encoding
-
-        # Append to the encoded metadata list
+        combined_encoding = metadata_to_embedding(entry, speaker_id_to_embedding, file_id_to_embedding, system_id_to_embedding, label_to_embedding)
         encoded_metadata.append(combined_encoding)
 
     # Convert to tensor
